@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Faculty Finder BD</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f5fb;color:#17243b;
+font-family:Arial,sans-serif;padding:22px}
+main{max-width:650px;margin:35px auto;background:white;
+padding:28px;border-radius:20px;box-shadow:0 8px 35px #1b315515}
+h1{font-size:27px;margin-bottom:8px}
+.sub{color:#6b7890;line-height:1.6}
+label{display:block;font-weight:700;margin:20px 0 9px}
+select,input,button{width:100%;padding:14px;border-radius:10px;
+font-size:16px}
+select,input{border:1px solid #d8dfeb;background:#fff}
+button{border:0;background:#2458d3;color:white;
+font-weight:bold;margin-top:22px;cursor:pointer}
+#result{margin-top:22px;padding:18px;border-radius:12px;
+background:#edf8f1;line-height:1.7;overflow-wrap:anywhere}
+.hide{display:none}
+.small{font-size:12px;color:#69778c;line-height:1.6}
+</style>
+</head>
+<body>
+<main>
+  <h1>🎓 Medical Faculty Finder</h1>
+  <p class="sub">কোর্স ও সাবজেক্ট নির্বাচন করে সংশ্লিষ্ট ফ্যাকাল্টি বা subject group খুঁজুন।</p>
+
+  <form id="searchForm">
+    <label for="course">১. Course</label>
+    <select id="course" required>
+      <option value="">Select course</option>
+      <option>Residency</option>
+      <option>Non-Residency</option>
+      <option>FCPS</option>
+    </select>
+
+    <label for="subject">২. Subject</label>
+    <input id="subject" list="suggestions"
+      placeholder="সাবজেক্ট লিখুন, যেমন Medicine" required>
+    <datalist id="suggestions"></datalist>
+    <button type="submit">Find Faculty →</button>
+  </form>
+
+  <section id="result" class="hide" aria-live="polite"></section>
+  <p class="small">
+    তথ্যের ভিত্তি: BMU Residency prospectus 2025, BMU Non-Residency
+    প্রকাশিত তালিকা এবং BCPS Fellowship Subjects। ভর্তির আগে সর্বশেষ
+    অফিসিয়াল বিজ্ঞপ্তি যাচাই করুন।
+  </p>
+</main>
+
+<script>
+// BMU Residency: 2025 prospectus থেকে সংগৃহীত বিষয় ও Faculty
+const residency = [
+  ["Cardiology","Faculty of Medicine"],
+  ["Endocrinology","Faculty of Medicine"],
+  ["Gastroenterology","Faculty of Medicine"],
+  ["Haematology","Faculty of Medicine"],
+  ["Hematology","Faculty of Medicine"],
+  ["Hepatology","Faculty of Medicine"],
+  ["Internal Medicine","Faculty of Medicine"],
+  ["Medical Oncology","Faculty of Medicine"],
+  ["Nephrology","Faculty of Medicine"],
+  ["Neurology","Faculty of Medicine"],
+  ["Palliative Medicine","Faculty of Medicine"],
+  ["Pulmonology","Faculty of Medicine"],
+  ["Rheumatology","Faculty of Medicine"],
+  ["Child and Adolescent Psychiatry","Faculty of Medicine"],
+  ["Child & Adolescent Psychiatry","Faculty of Medicine"],
+  ["Dermatology and Venereology","Faculty of Medicine"],
+  ["Dermatology & Venereology","Faculty of Medicine"],
+  ["Nuclear Medicine","Faculty of Medicine"],
+  ["Oncology","Faculty of Medicine"],
+  ["Physical Medicine and Rehabilitation","Faculty of Medicine"],
+  ["Psychiatry","Faculty of Medicine"],
+  ["Radiation Oncology","Faculty of Medicine"],
+  ["Transfusion Medicine","Faculty of Medicine"],
+
+  ["Cardiovascular and Thoracic Surgery","Faculty of Surgery"],
+  ["Cardiovascular & Thoracic Surgery","Faculty of Surgery"],
+  ["Colorectal Surgery","Faculty of Surgery"],
+  ["General Surgery","Faculty of Surgery"],
+  ["Hepatobiliary, Pancreatic and Liver Transplant Surgery","Faculty of Surgery"],
+  ["Neurosurgery","Faculty of Surgery"],
+  ["Orthopaedic Surgery","Faculty of Surgery"],
+  ["Otolaryngology","Faculty of Surgery"],
+  ["Urology","Faculty of Surgery"],
+  ["Paediatric Surgery","Faculty of Surgery"],
+  ["Plastic Surgery","Faculty of Surgery"],
+  ["Surgical Oncology","Faculty of Surgery"],
+  ["Thoracic Surgery","Faculty of Surgery"],
+  ["Vascular Surgery","Faculty of Surgery"],
+  ["Anaesthesiology","Faculty of Surgery"],
+  ["Critical Care Medicine","Faculty of Surgery"],
+  ["Community Ophthalmology","Faculty of Surgery"],
+  ["Feto-maternal Medicine","Faculty of Surgery"],
+  ["Gynaecological Oncology","Faculty of Surgery"],
+  ["Obstetrics and Gynaecology","Faculty of Surgery"],
+  ["Ophthalmology","Faculty of Surgery"],
+  ["Radiology and Imaging","Faculty of Surgery"],
+  ["Reproductive Endocrinology and Infertility","Faculty of Surgery"],
+
+  ["Neonatology","Faculty of Paediatrics"],
+  ["Paediatrics","Faculty of Paediatrics"],
+  ["Paediatric Cardiology","Faculty of Paediatrics"],
+  ["Paediatric Gastroenterology","Faculty of Paediatrics"],
+  ["Paediatric Haematology and Oncology","Faculty of Paediatrics"],
+  ["Paediatric Nephrology","Faculty of Paediatrics"],
+  ["Paediatric Neurology and Neuro-Development","Faculty of Paediatrics"],
+
+  ["Conservative Dentistry and Endodontics","Faculty of Dentistry"],
+  ["Oral and Maxillofacial Surgery","Faculty of Dentistry"],
+  ["Paediatric Dentistry","Faculty of Dentistry"],
+  ["Orthodontics","Faculty of Dentistry"],
+  ["Prosthodontics","Faculty of Dentistry"],
+  ["Dental Materials","Faculty of Dentistry"],
+  ["Dental Pharmacology","Faculty of Dentistry"],
+  ["Oral Anatomy","Faculty of Dentistry"],
+  ["Oral and Maxillofacial Pathology","Faculty of Dentistry"],
+  ["Periodontology","Faculty of Dentistry"],
+
+  ["Anatomy","Faculty of Basic and Paraclinical Sciences"],
+  ["Biochemistry","Faculty of Basic and Paraclinical Sciences"],
+  ["Laboratory Medicine","Faculty of Basic and Paraclinical Sciences"],
+  ["Microbiology","Faculty of Basic and Paraclinical Sciences"],
+  ["Pathology","Faculty of Basic and Paraclinical Sciences"],
+  ["Pharmacology","Faculty of Basic and Paraclinical Sciences"],
+  ["Physiology","Faculty of Basic and Paraclinical Sciences"],
+  ["Virology","Faculty of Basic and Paraclinical Sciences"],
+  ["Immunology","Faculty of Basic and Paraclinical Sciences"],
+  ["Forensic Medicine","Faculty of Basic and Paraclinical Sciences"]
+];
+
+// BMU Non-Residency: প্রকাশিত 2025 তালিকার বিষয়গুলো
+const nonResidency = [
+  ["Blood, Serology & Transfusion","Faculty of Medicine"],
+  ["Cardiology","Faculty of Medicine"],
+  ["Dermatology and Venereology","Faculty of Medicine"],
+  ["Endocrinology and Metabolism","Faculty of Medicine"],
+  ["Tuberculosis and Chest Disease","Faculty of Medicine"],
+  ["Anaesthesiology","Faculty of Surgery"],
+  ["Community Ophthalmology","Faculty of Surgery"],
+  ["Medical Radio Diagnosis","Faculty of Surgery"],
+  ["Obstetrics and Gynaecology","Faculty of Surgery"],
+  ["Ophthalmology","Faculty of Surgery"],
+  ["Orthopaedics","Faculty of Surgery"],
+  ["Otolaryngology","Faculty of Surgery"],
+  ["Anatomy","Faculty of Basic Science & Para Clinical Science"],
+  ["Biochemistry","Faculty of Basic Science & Para Clinical Science"],
+  ["Microbiology","Faculty of Basic Science & Para Clinical Science"],
+  ["Pharmacology","Faculty of Basic Science & Para Clinical Science"],
+  ["Physiology","Faculty of Basic Science & Para Clinical Science"],
+  ["Forensic Medicine","Faculty of Basic Science & Para Clinical Science"],
+  ["Laboratory Medicine","Faculty of Basic Science & Para Clinical Science"],
+  ["Medical Education","Faculty of Basic Science & Para Clinical Science"],
+  ["Dental Surgery","Faculty of Dentistry"],
+  ["Preventive and Social Medicine","Faculty of Preventive and Social Medicine"],
+  ["Community Medicine","Faculty of Preventive and Social Medicine"],
+  ["Community Nutrition","Faculty of Preventive and Social Medicine"],
+  ["Epidemiology","Faculty of Preventive and Social Medicine"],
+  ["Health Promotion and Health Education","Faculty of Preventive and Social Medicine"],
+  ["Health Service Management and Policy","Faculty of Preventive and Social Medicine"],
+  ["Hospital Management","Faculty of Preventive and Social Medicine"],
+  ["Non-Communicable Diseases","Faculty of Preventive and Social Medicine"],
+  ["Occupational and Environmental Health","Faculty of Preventive and Social Medicine"],
+  ["Reproductive and Child Health","Faculty of Preventive and Social Medicine"],
+  ["Child Health","Faculty of Paediatrics"]
+];
+
+// BCPS Fellowship: official General and Specialized subject groups
+const fcpsGeneral = [
+"Medicine","Surgery","Ophthalmology","Obstetrics & Gynaecology",
+"Paediatrics","Otolaryngology - Head & Neck Surgery","Psychiatry",
+"Anaesthesiology","Radiology & Imaging","Radiotherapy",
+"Dermatology & Venereology","Physical Medicine & Rehabilitation",
+"Haematology","Biochemistry","Pathology","Microbiology",
+"Conservative Dentistry & Endodontics","Oral and Maxillofacial Surgery",
+"Prosthodontics","Orthodontics & Dentofacial Orthopaedics",
+"Transfusion Medicine","Family Medicine","Anatomy","Physiology",
+"Pharmacology","Forensic Medicine","Community Medicine"
+];
+
+const fcpsSpecialized = [
+"Gastroenterology","Neurology","Nephrology","Endocrinology & Metabolism",
+"Cardiology","Pulmonology","Hepatology","Rheumatology",
+"Infectious Disease & Tropical Medicine","Urology","Neuro-surgery",
+"Cardiovascular Surgery","Thoracic Surgery","Plastic and Reconstructive Surgery",
+"Orthopaedic Surgery","Paediatric Surgery","Neonatology",
+"Paediatric Haematology & Oncology","Paediatric Nephrology",
+"Paediatric Gastroenterology & Nutrition","Paediatric Pulmonology",
+"Paediatric Neurology & Development","Paediatric Cardiology",
+"Feto-Maternal Medicine","Gynaecological Oncology",
+"Reproductive Endocrinology & Infertility","Hepatobiliary Surgery",
+"Colorectal Surgery","Surgical Oncology","Vitreo Retina",
+"Paediatric Ophthalmology","Casualty and Emergency Surgery",
+"Medical Oncology","Palliative Medicine",
+"Paediatric Endocrinology and Metabolism",
+"Paediatric Critical Care Medicine","Child and Adolescent Psychiatry",
+"Female Pelvic Medicine and Reconstructive Surgery"
+];
+
+const form = document.getElementById("searchForm");
+const course = document.getElementById("course");
+const subject = document.getElementById("subject");
+const suggestions = document.getElementById("suggestions");
+const result = document.getElementById("result");
+
+function normalize(s) {
+  return s.toLowerCase()
+    .normalize("NFKD")
+    .replace(/[&]/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function currentSubjects() {
+  if (course.value === "Residency") return residency.map(x => x[0]);
+  if (course.value === "Non-Residency") return nonResidency.map(x => x[0]);
+  if (course.value === "FCPS") return [...fcpsGeneral, ...fcpsSpecialized];
+  return [];
+}
+
+function refreshSuggestions() {
+  suggestions.replaceChildren();
+  currentSubjects().forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    suggestions.appendChild(option);
+  });
+}
+
+course.addEventListener("change", () => {
+  subject.value = "";
+  result.classList.add("hide");
+  refreshSuggestions();
+});
+
+function showResult(title, rows) {
+  result.replaceChildren();
+  result.classList.remove("hide");
+
+  const heading = document.createElement("h2");
+  heading.textContent = title;
+  result.appendChild(heading);
+
+  rows.forEach(([label, value]) => {
+    const p = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    p.append(strong, document.createTextNode(value));
+    result.appendChild(p);
+  });
+}
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const chosen = course.value;
+  const query = normalize(subject.value);
+
+  if (chosen === "Residency" || chosen === "Non-Residency") {
+    const data = chosen === "Residency" ? residency : nonResidency;
+    const match = data.find(row => normalize(row[0]) === query);
+
+    if (match) {
+      showResult("আপনার রেজাল্ট", [
+        ["Course", chosen],
+        ["Subject", match[0]],
+        ["Faculty", match[1]]
+      ]);
+    } else {
+      showResult("সাবজেক্ট পাওয়া যায়নি", [
+        ["Course", chosen],
+        ["Search", subject.value],
+        ["পরামর্শ", "বানান যাচাই করুন বা অফিসিয়াল তালিকায় বিষয়টি খুঁজুন।"]
+      ]);
+    }
+    return;
+  }
+
+  if (chosen === "FCPS") {
+    const general = fcpsGeneral.find(x => normalize(x) === query);
+    const specialized = fcpsSpecialized.find(x => normalize(x) === query);
+
+    if (general || specialized) {
+      // FCPS-এর ক্ষেত্রে specialized subject কোন general subject-এর অধীনে, সেটি দেখানো হবে।
+      const fcpsGeneralParent = {
+        "Gastroenterology": "Medicine",
+        "Neurology": "Medicine",
+        "Nephrology": "Medicine",
+        "Endocrinology & Metabolism": "Medicine",
+        "Cardiology": "Medicine",
+        "Pulmonology": "Medicine",
+        "Hepatology": "Medicine",
+        "Rheumatology": "Medicine",
+        "Infectious Disease & Tropical Medicine": "Medicine",
+        "Urology": "Surgery",
+        "Neuro-surgery": "Surgery",
+        "Cardiovascular Surgery": "Surgery",
+        "Thoracic Surgery": "Surgery",
+        "Plastic and Reconstructive Surgery": "Surgery",
+        "Orthopaedic Surgery": "Surgery",
+        "Paediatric Surgery": "Surgery",
+        "Paediatric Haematology & Oncology": "Paediatrics",
+        "Paediatric Nephrology": "Paediatrics",
+        "Paediatric Gastroenterology & Nutrition": "Paediatrics",
+        "Paediatric Pulmonology": "Paediatrics",
+        "Paediatric Neurology & Development": "Paediatrics",
+        "Paediatric Cardiology": "Paediatrics",
+        "Neonatology": "Paediatrics",
+        "Feto-Maternal Medicine": "Obstetrics & Gynaecology",
+        "Gynaecological Oncology": "Obstetrics & Gynaecology",
+        "Reproductive Endocrinology & Infertility": "Obstetrics & Gynaecology",
+        "Hepatobiliary Surgery": "Surgery",
+        "Colorectal Surgery": "Surgery",
+        "Surgical Oncology": "Surgery",
+        "Vitreo Retina": "Ophthalmology",
+        "Paediatric Ophthalmology": "Ophthalmology",
+        "Casualty and Emergency Surgery": "Surgery",
+        "Medical Oncology": "Medicine",
+        "Palliative Medicine": "Medicine",
+        "Paediatric Endocrinology and Metabolism": "Paediatrics",
+        "Paediatric Critical Care Medicine": "Paediatrics",
+        "Child and Adolescent Psychiatry": "Psychiatry",
+        "Female Pelvic Medicine and Reconstructive Surgery": "Obstetrics & Gynaecology"
+      };
+
+      showResult("আপনার রেজাল্ট", [
+        ["Course", "FCPS"],
+        ["Subject", general || specialized],
+        ["General Subject-এর অধীনে", general || fcpsGeneralParent[specialized] || "BCPS-এর তালিকা থেকে নিশ্চিত করা যায়নি"],
+        ["Authority", "BCPS"]
+      ]);
+    } else {
+      showResult("সাবজেক্ট পাওয়া যায়নি", [
+        ["Course", "FCPS"],
+        ["Search", subject.value],
+        ["পরামর্শ", "BCPS-এর অফিসিয়াল Fellowship Subjects তালিকা দেখুন।"]
+      ]);
+    }
+  }
+});
+
+refreshSuggestions();
+</script>
+</body>
+</html>
